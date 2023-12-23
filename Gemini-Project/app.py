@@ -37,45 +37,75 @@ st.set_page_config(page_title = 'Gemini Project')
 
 st.header('Gemini Pro / Gemini Pro Vision')
 
-model_option = st.selectbox('Do you need to provide image for your question?', 
-                            ('No', 'Yes'))
+col1, col2 = st.columns(2)
 
-def reset_options():
-    st.session_state.submit_button = ''
-    st.session_state.input = ''
-    st.session_state.clicked = False
+with col1:
 
-if 'model_option' not in st.session_state:
-    st.session_state.model_option = ''
-    st.session_state.model_option = model_option
-
-if st.session_state.model_option != model_option or 'submit_button' not in st.session_state:
-    reset_options()  
+    model_option = st.selectbox('Do you need to provide image for your question?', 
+                                ('No', 'Yes'))
     
-def click_button():
-    st.session_state.clicked = True
-    st.session_state.question_input = st.session_state.input
-    st.session_state.input = ''
-
-st.text_input('Input: ', key='input', on_change=click_button)
-
-image = ''
-
-if model_option == 'Yes':
-    uploaded_file = st.file_uploader('Choose an image', type=['jpg', 'jpeg', 'png'])
+    if 'model_option' not in st.session_state:
+        st.session_state.model_option = ''
+        st.session_state.model_option = model_option
+    
+    if 'submit_button' not in st.session_state:
+        st.session_state.submit_button = ''
+        st.session_state.input = ''
+        st.session_state.clicked = False
+        st.session_state.question_log = []
+        st.session_state.response_log = []
+        st.session_state.image_log = []
+        
+    def click_button():
+        st.session_state.clicked = True
+        st.session_state.question_input = st.session_state.input
+        st.session_state.input = ''
+    
+    if st.session_state.model_option != model_option:
+        st.session_state.submit_button = ''
+        st.session_state.input = ''
+        st.session_state.clicked = False
+        st.session_state.model_option = model_option
+    
     image = ''
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Image', use_column_width=True)
+    
+    input = st.text_input('Input: ', key='input', on_change=click_button)
+    
+    if model_option == 'Yes':
+        uploaded_file = st.file_uploader('Choose an image', type=['jpg', 'jpeg', 'png'])
+        image = ''
+        if uploaded_file is not None:
+            image = Image.open(uploaded_file)
+            st.image(image, caption='Uploaded Image', use_column_width=True)
+    
+    ### When submit is clicked
+    if st.session_state.clicked == True:
+        if image != '':
+            response = get_gemini_response(model_option, st.session_state.question_input, image)
+        else:
+            response = get_gemini_response(model_option, st.session_state.question_input)
+        
+        st.subheader('Current question asked:')
+        st.write(st.session_state.question_input)
+        
+        st.subheader('Current response is')
+        st.write(response)
+        
+        st.session_state.question_log.append(st.session_state.question_input)
+        st.session_state.image_log.append(image)
+        st.session_state.response_log.append(response)
 
-submit = st.button('Ask the question', on_click=click_button)
-
-### When submit is clicked
-if st.session_state.clicked == True:
-    if image != '':
-        response = get_gemini_response(model_option, st.session_state.question_input, image)
-    else:
-        response = get_gemini_response(model_option, st.session_state.question_input)
-    st.subheader('The response is')
-    st.write(response)
+with col2:
+    st.subheader('Past Questions and Responses:')
+    for index, (each_question, each_image, each_response) in enumerate(zip(st.session_state.question_log, st.session_state.image_log, st.session_state.response_log)):
+        st.subheader('Question {}:'.format(index + 1))
+        st.write(each_question)
+        
+        if each_image != '':
+            st.subheader('Image {}:'.format(index + 1))
+            st.image(each_image)
+        
+        st.subheader('Response {}:'.format(index + 1))
+        st.write(each_response)
+    
     st.session_state.question_input = ''
