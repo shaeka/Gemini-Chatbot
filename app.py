@@ -55,11 +55,6 @@ with col1:
         st.session_state.question_log = []
         st.session_state.response_log = []
         st.session_state.image_log = []
-        
-    def click_button():
-        st.session_state.clicked = True
-        st.session_state.question_input = st.session_state.input
-        st.session_state.input = ''
     
     if st.session_state.model_option != model_option:
         st.session_state.submit_button = ''
@@ -68,8 +63,6 @@ with col1:
         st.session_state.model_option = model_option
     
     image = ''
-    
-    # input = st.text_input('Input: ', key='input', on_change=click_button)
     input = st.text_area('Input: ', key='input')
     
     if model_option == 'Yes':
@@ -81,6 +74,7 @@ with col1:
     ### When submit is clicked
     if st.button("Generate response"):
         st.session_state.question_input = input
+        
         if image != '':
             response = get_gemini_response(model_option, st.session_state.question_input, image)
         else:
