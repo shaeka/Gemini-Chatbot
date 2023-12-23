@@ -40,7 +40,26 @@ st.header('Gemini Pro / Gemini Pro Vision')
 model_option = st.selectbox('Do you need to provide image for your question?', 
                             ('No', 'Yes'))
 
-input = st.text_input('Input: ', key='input')
+def reset_options():
+    st.session_state.submit_button = ''
+    st.session_state.input = ''
+    st.session_state.clicked = False
+
+if 'model_option' not in st.session_state:
+    st.session_state.model_option = ''
+    st.session_state.model_option = model_option
+
+if st.session_state.model_option != model_option or 'submit_button' not in st.session_state:
+    reset_options()  
+    
+def click_button():
+    st.session_state.clicked = True
+    st.session_state.question_input = st.session_state.input
+    st.session_state.input = ''
+
+st.text_input('Input: ', key='input', on_change=click_button)
+
+image = ''
 
 if model_option == 'Yes':
     uploaded_file = st.file_uploader('Choose an image', type=['jpg', 'jpeg', 'png'])
@@ -49,13 +68,14 @@ if model_option == 'Yes':
         image = Image.open(uploaded_file)
         st.image(image, caption='Uploaded Image', use_column_width=True)
 
-submit = st.button('Ask the question')
+submit = st.button('Ask the question', on_click=click_button)
 
 ### When submit is clicked
-if submit:
+if st.session_state.clicked == True:
     if image != '':
-        response = get_gemini_response(model_option, input, image)
+        response = get_gemini_response(model_option, st.session_state.question_input, image)
     else:
-        response = get_gemini_response(model_option, input)
+        response = get_gemini_response(model_option, st.session_state.question_input)
     st.subheader('The response is')
     st.write(response)
+    st.session_state.question_input = ''
